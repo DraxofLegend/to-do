@@ -1,103 +1,99 @@
-import Image from "next/image";
+'use client';
+
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { useForm } from "react-hook-form";
+import axios from "axios";
+import { useEffect } from "react";
+import { useState, } from "react";
+import { Checkbox } from "@/components/ui/checkbox"
+import { motion } from "framer-motion";
+
+
+interface TaskForm {
+  title: string;
+}
+
+interface Task {
+  title: string;
+  id: number;
+}
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  const { register, handleSubmit, reset } = useForm<TaskForm>()
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [checked, isChecked] = useState<{ [key: number]: boolean }>({})
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+
+      const res = await axios.get('/api/task');
+      setTasks(res.data);
+
+      const initialChecked: { [key: number]: boolean } = {};
+      res.data.forEach((task: Task) => {
+        initialChecked[task.id] = false;
+      });
+      isChecked(initialChecked);
+    };
+
+
+    fetchTasks();
+  }, []);
+
+
+  return (
+    <div className="p-5 space-y-4 min-h-screen">
+      <h1 className="text-center text-3xl">To-Do App</h1>
+      <form className="flex gap-4 justify-center" onSubmit={handleSubmit(async (data) => {
+        await axios.post('/api/task', data)
+        await axios.get('/api/task')
+          .then((res) => {
+            setTasks(res.data)
+            reset()
+          })
+          .catch((err) => {
+            console.error("Failed to fetch tasks", err)
+          })
+
+      })}>
+        <Input {...register("title")} type="text" className="max-w-[70%]" placeholder="Enter Task Here" />
+        <Button type="submit" className="cursor-pointer" variant="outline">Submit</Button>
+      </form>
+      <div className="bg-gray-600/40 min-h-130 px-4 py-4">
+        {[...tasks].reverse().map((task) => (
+          <motion.div key={task.id}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center justify-center">
+            <Checkbox
+              className="w-6 h-6 cursor-pointer border-black"
+              checked={checked[task.id] || false}
+              onCheckedChange={(checked) =>
+                isChecked((prev) => ({
+                  ...prev,
+                  [task.id]: checked as boolean,
+                }))
+              }
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            <div
+              className={`flex text-xl ${checked[task.id] ? 'text-white bg-black' : 'text-black bg-white'
+                } border-2 border-black p-5 items-center justify-center ml-3 rounded-3xl w-xl my-3`}
+            >
+
+              {task.title}
+
+            </div>
+            <img src="/bin.png" className="w-6 m-3 cursor-pointer" onClick={async () => {
+              await axios.delete('/api/task', { data: { id: task.id } })
+
+              const res = await axios.get('/api/task');
+              setTasks(res.data);
+            }}></img>
+          </motion.div>))}
+      </div>
     </div>
   );
 }
